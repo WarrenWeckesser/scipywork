@@ -1,1 +1,1 @@
-from _anova import *
+from ._anova import *

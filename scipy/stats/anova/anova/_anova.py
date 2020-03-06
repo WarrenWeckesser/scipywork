@@ -4,6 +4,16 @@ import numpy as np
 from scipy import special
 
 
+__all__ = [
+    'AnovaOnewayResult',
+    'anova_oneway', 'anova_oneway_from_xy',
+    'anova_oneway_ci_diffs', 'anova_oneway_ci_means',
+    'AnovaTwowayResult',
+    'anova_twoway1', 'anova_twoway_balanced', 'anova_twoway_unbalanced',
+    'anova_twoway_from_x_y_values'
+]
+
+
 def _nway_groups(*factors, values, levels=None):
     """
     Parameters
