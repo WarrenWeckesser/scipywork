@@ -126,3 +126,73 @@ Total             152.00000  17       8.941
 
 As expected, the results are the same as those returned by
 `anova_oneway`.
+
+
+Two-way ANOVA
+-------------
+To do...
+
+Two-way ANOVA Example: `anova_twoway_balanced`
+----------------------------------------------
+This data is from
+
+    https://www.itl.nist.gov/div898/handbook/prc/section4/prc438.htm
+
+```
+        Materials
+LAB    1       2       3
+1    4.1     3.1     3.5
+1    3.9     2.8     3.2
+1    4.3     3.3     3.6
+2    2.7     1.9     2.7
+2    3.1     2.2     2.3
+2    2.6     2.3     2.5
+```
+
+We'll enter the data shown above into a numpy array
+
+```
+In [15]: responses = np.array(
+    ...: [[4.1, 3.1, 3.5],
+    ...:  [3.9, 2.8, 3.2],
+    ...:  [4.3, 3.3, 3.6],
+    ...:  [2.7, 1.9, 2.7],
+    ...:  [3.1, 2.2, 2.3],
+    ...:  [2.6, 2.3, 2.5]]
+    ...: )
+```
+
+and then reshape it into an 3-d array in which the last
+dimension holds the replicates:
+
+```
+In [16]: x = np.swapaxes(response.reshape(2, 3, 3), 1, 2)
+```
+
+For example,
+
+```
+In [17]: x[0, 0]
+Out[17]: array([4.1, 3.9, 4.3])
+
+In [18]: x[1, 2]
+Out[18]: array([2.7, 2.3, 2.5])
+```
+
+The array `x` is now in a format that can be passed to
+`anova_twoway_balanced`:
+
+```
+In [19]: from anova import anova_twoway_balanced
+
+In [20]: result = anova_twoway_balanced(x)
+
+In [21]: print(result)
+ANOVA two-way
+Source                   SS  DF          MS        F       p
+Factor 0            2.18111   2       1.091   21.811 0.00010083
+Factor 1            5.01389   1       5.014  100.278 3.528e-07
+Interaction         0.13444   2       0.067    1.344 0.29727
+Error               0.60000  12       0.050
+Total               7.92944  17
+```
