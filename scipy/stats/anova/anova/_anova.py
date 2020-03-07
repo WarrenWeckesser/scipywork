@@ -191,26 +191,26 @@ class AnovaTwowayResult(SimpleNamespace):
     
     def __str__(self):
         if hasattr(self, 'SS01'):
-            vartot = self.SS0 + self.SS1 + self.SS01 + self.SSerror
-            dftot = self.DF0 + self.DF1 + self.DF01 + self.DFerror
+            vartot = self.SSA + self.SSB + self.SS01 + self.SSerror
+            dftot = self.DFA + self.DFB + self.DF01 + self.DFerror
             s = "\n".join([
                     "ANOVA two-way",
                     "Source                   SS  DF          MS        F       p",
-                    f"Factor 0       {self.SS0:12.5f} {self.DF0:3}  {self.MS0:10.3f} {self.F0:8.3f} {self.p0:<10.5g}",
-                    f"Factor 1       {self.SS1:12.5f} {self.DF1:3}  {self.MS1:10.3f} {self.F1:8.3f} {self.p1:<10.5g}",
+                    f"Factor A       {self.SSA:12.5f} {self.DFA:3}  {self.MSA:10.3f} {self.FA:8.3f} {self.pA:<10.5g}",
+                    f"Factor B       {self.SSB:12.5f} {self.DFB:3}  {self.MSB:10.3f} {self.FB:8.3f} {self.pB:<10.5g}",
                     f"Interaction    {self.SS01:12.5f} {self.DF01:3}  {self.MS01:10.3f} {self.F01:8.3f} {self.p01:<10.5g}",
                     f"Error          {self.SSerror:12.5f} {self.DFerror:3}  {self.MSerror:10.3f}",
                     f"Total          {vartot:12.5f} {dftot:3}"])
         else:
             # No interaction term.
             # XXX Clean up duplicated code.
-            vartot = self.SS0 + self.SS1 + self.SSerror
-            dftot = self.DF0 + self.DF1 + self.DFerror
+            vartot = self.SSA + self.SSB + self.SSerror
+            dftot = self.DFA + self.DFB + self.DFerror
             s = "\n".join([
                     "ANOVA two-way",
                     "Source                   SS  DF          MS        F       p",
-                    f"Factor 0       {self.SS0:12.5f} {self.DF0:3}  {self.MS0:10.3f} {self.F0:8.3f} {self.p0:<10.5g}",
-                    f"Factor 1       {self.SS1:12.5f} {self.DF1:3}  {self.MS1:10.3f} {self.F1:8.3f} {self.p1:<10.5g}",
+                    f"Factor A       {self.SSA:12.5f} {self.DFA:3}  {self.MSA:10.3f} {self.FA:8.3f} {self.pA:<10.5g}",
+                    f"Factor B       {self.SSB:12.5f} {self.DFB:3}  {self.MSB:10.3f} {self.FB:8.3f} {self.pB:<10.5g}",
                     f"Error          {self.SSerror:12.5f} {self.DFerror:3}  {self.MSerror:10.3f}",
                     f"Total          {vartot:12.5f} {dftot:3}"])
         return s
@@ -229,17 +229,23 @@ def anova_twoway_balanced(data):
         it implies `r` is 1.
 
     """
+    # In the following, the two factors are "labeled" A and B.
+
     data = np.asarray(data)
     shp = data.shape
     if data.ndim == 2:
         raise ValueError("ndim = 2 not implemented yet, use anova_twoway1 instead.")
 
     grand_mean = data.mean()
+
     #mean0 = data.mean(axis=(1,2), keepdims=True)
     mean2 = data.mean(axis=2, keepdims=True)
     mean01 = data.mean(axis=(0,1), keepdims=True)
-    mean02 = data.mean(axis=(0,2), keepdims=True)
-    mean12 = data.mean(axis=(1,2), keepdims=True)
+
+    #mean02 = data.mean(axis=(0,2), keepdims=True)
+    meanB = data.mean(axis=(0,2), keepdims=True)
+    #mean12 = data.mean(axis=(1,2), keepdims=True)
+    meanA = data.mean(axis=(1,2), keepdims=True)
 
     ss_total = ((data - grand_mean)**2).sum()
     dof_total = shp[0]*shp[1]*shp[2] - 1
@@ -248,15 +254,15 @@ def anova_twoway_balanced(data):
     dof_repl = shp[2] - 1
     ms_repl  = ss_repl / dof_repl
 
-    ss_02    = shp[0]*shp[2]*((mean02 - grand_mean)**2).sum()
-    dof_02   = shp[1] - 1
-    ms_02    = ss_02 / dof_02
+    ssB    = shp[0]*shp[2]*((meanB - grand_mean)**2).sum()
+    dofB   = shp[1] - 1
+    msB    = ssB / dofB
 
-    ss_12    = shp[1]*shp[2]*((mean12 - grand_mean)**2).sum()
-    dof_12   = shp[0] - 1
-    ms_12    = ss_12 / dof_12
+    ssA    = shp[1]*shp[2]*((meanA - grand_mean)**2).sum()
+    dofA   = shp[0] - 1
+    msA    = ssA / dofA
 
-    ss_inter  = shp[2]*((mean2 - mean12 - mean02 + grand_mean)**2).sum()
+    ss_inter  = shp[2]*((mean2 - meanA - meanB + grand_mean)**2).sum()
     dof_inter = (shp[0] - 1)*(shp[1] - 1)
     ms_inter  = ss_inter / dof_inter
 
@@ -269,13 +275,16 @@ def anova_twoway_balanced(data):
     ms_error  = ss_error / dof_error
 
     F_repl  = ms_repl / ms_error
-    F_02    = ms_02 / ms_error
-    F_12    = ms_12 / ms_error
+    FB      = msB / ms_error
+    FA      = msA / ms_error
     F_inter = ms_inter / ms_error
 
     p_repl  = special.fdtrc(dof_repl, dof_error, F_repl)
-    p_12    = special.fdtrc(dof_12, dof_error, F_12)
-    p_02    = special.fdtrc(dof_02, dof_error, F_02)
+
+    pA    = special.fdtrc(dofA, dof_error, FA)
+
+    pB    = special.fdtrc(dofB, dof_error, FB)
+
     p_inter = special.fdtrc(dof_inter, dof_error, F_inter) 
 
     #print("                       SS  DF          MS        F       p")
@@ -286,11 +295,11 @@ def anova_twoway_balanced(data):
     #print(f"Error        {ss_error:12.5f} {dof_error:3}  {ms_error:10.3f}")
     #print(f"Total        {ss_total:12.5f} {dof_total:3}")
 
-    result = AnovaTwowayResult(SS0=ss_02, SS1=ss_12, SS01=ss_inter, SSerror=ss_error,
-                               DF0=dof_02, DF1=dof_12, DF01=dof_inter, DFerror=dof_error,
-                               MS0=ms_02, MS1=ms_12, MS01=ms_inter, MSerror=ms_error,
-                               F0=F_02, F1=F_12, F01=F_inter,
-                               p0=p_02, p1=p_12, p01=p_inter)
+    result = AnovaTwowayResult(SSB=ssB, SSA=ssA, SS01=ss_inter, SSerror=ss_error,
+                               DFB=dofB, DFA=dofA, DF01=dof_inter, DFerror=dof_error,
+                               MSB=msB, MSA=msA, MS01=ms_inter, MSerror=ms_error,
+                               FB=FB, FA=FA, F01=F_inter,
+                               pB=pB, pA=pA, p01=p_inter)
     return result
 
 
@@ -342,11 +351,11 @@ def anova_twoway1(data):
     #print(f"{sse:12.5f}  {dfe:3} {mse:12.5f}")
     #print(f"{ss_total:12.5f}")
 
-    result = AnovaTwowayResult(SS0=ss0, SS1=ss1, SSerror=sse,
-                               DF0=df0, DF1=df1, DFerror=dfe,
-                               MS0=ms0, MS1=ms1, MSerror=mse,
-                               F0=F0, F1=F1,
-                               p0=p0, p1=p1)
+    result = AnovaTwowayResult(SSB=ss0, SSA=ss1, SSerror=sse,
+                               DFB=df0, DFA=df1, DFerror=dfe,
+                               MSB=ms0, MSA=ms1, MSerror=mse,
+                               FB=F0, FA=F1,
+                               pB=p0, pA=p1)
     return result
 
 def anova_twoway_unbalanced(data):
@@ -432,11 +441,11 @@ def anova_twoway_unbalanced(data):
     #print(f"error: {ve:12.5f}  {dfve:3d} {mse:12.5f}")
     #print(f"total: {v:12.5f}  {dfv:3d}")
 
-    result = AnovaTwowayResult(SS0=vc, SS1=vr, SS01=vi, SSerror=ve,
-                               DF0=dfvc, DF1=dfvr, DF01=dfvi, DFerror=dfve,
-                               MS0=msc, MS1=msr, MS01=msi, MSerror=mse,
-                               F0=fc, F1=fr, F01=fi,
-                               p0=pc, p1=pr, p01=pi)
+    result = AnovaTwowayResult(SSB=vc, SSA=vr, SS01=vi, SSerror=ve,
+                               DFB=dfvc, DFA=dfvr, DF01=dfvi, DFerror=dfve,
+                               MSB=msc, MSA=msr, MS01=msi, MSerror=mse,
+                               FB=fc, FA=fr, F01=fi,
+                               pB=pc, pA=pr, p01=pi)
     return result
 
 
