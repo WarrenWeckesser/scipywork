@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import f_oneway
+from anova import anova_oneway
 
 # These example are from
 # @book{Johnson,
@@ -11,16 +11,17 @@ from scipy.stats import f_oneway
 #     year={2005}
 # }
 
+
 # Example on page 401
 
 a = [13, 10, 8, 11, 8]
 b = [13, 11, 14, 14]
 c = [4, 1, 3, 4, 2, 4]
-f, p = f_oneway(a, b, c)
+result = anova_oneway(a, b, c)
 
 print("Example, page 401")
-print("f =", f)
-print("p =", p)
+with np.printoptions(formatter={'float': lambda t: format(t, '8.3f')}):
+    print(result)
 print()
 
 
@@ -31,11 +32,10 @@ b = np.array([0.18, 0.28, 0.21, 0.23, 0.25, 0.20, 0.27, 0.19, 0.24, 0.22, 0.29, 
 c = np.array([0.19, 0.25, 0.27, 0.24, 0.18, 0.26, 0.28, 0.24, 0.25, 0.20, 0.21, 0.19])
 d = np.array([0.23, 0.30, 0.28, 0.28, 0.24, 0.34, 0.20, 0.18, 0.24, 0.28, 0.22, 0.21])
 
-
-f, p = f_oneway(a, b, c, d)
+result = anova_oneway(a, b, c, d)
 print("Example, page 408")
-print("f =", f)
-print("p =", p)
+with np.printoptions(formatter={'float': lambda t: format(t, '8.5f')}):
+    print(result)
 print()
 
 
@@ -45,8 +45,8 @@ pos1 = [90, 82, 79, 98, 83, 91]
 pos2 = [105, 89, 93, 104, 89, 95, 86]
 pos3 = [83, 89, 80, 94]
 
-f, p = f_oneway(pos1, pos2, pos3)
+result = anova_oneway(pos1, pos2, pos3)
 
 print("Example, page 409")
-print("f =", f)
-print("p =", p)
+with np.printoptions(formatter={'float': lambda t: format(t, '8.3f')}):
+    print(result)

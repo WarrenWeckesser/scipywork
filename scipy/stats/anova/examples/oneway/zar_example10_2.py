@@ -10,4 +10,6 @@ t4 = [36, 34, 37, 34, 35]
 
 
 result = anova_oneway(t1, t2, t3, t4)
-print(result)
+
+with np.printoptions(formatter={'float': lambda t: format(t, '7.2f')}):
+    print(result)

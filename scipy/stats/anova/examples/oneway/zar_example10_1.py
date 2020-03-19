@@ -8,4 +8,6 @@ f3 = [69.6, 77.1, 75.2, 71.5]
 f4 = [61.9, 64.2, 63.1, 66.7, 60.3]
 
 result = anova_oneway(f1, f2, f3, f4)
-print(result)
+
+with np.printoptions(formatter={'float': lambda t: format(t, '8.3f')}):
+    print(result)

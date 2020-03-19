@@ -11,6 +11,5 @@ su2      = np.array([1.61, 1.52, 1.54, 1.59, 1.56, 1.61, 1.54, 1.54, 1.61, 1.49]
 
 result = anova_oneway(control, glu2, fru2, glu1fru1, su2)
 
-print()
-print(f"F: {result.F:8.5f}")
-print(f"p: {result.p:g}")
+with np.printoptions(formatter={'float': lambda t: format(t, '8.4f')}):
+    print(result)

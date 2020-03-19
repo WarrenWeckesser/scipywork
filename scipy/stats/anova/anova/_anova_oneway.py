@@ -10,18 +10,45 @@ __all__ = [
 ]
 
 
+def _fmt(value):
+    return np.array2string(np.array(value))
+
+
 class AnovaOnewayResult(SimpleNamespace):
-    
+
     def __str__(self):
         vartot = self.SSb + self.SSw
         dftot = self.DFb + self.DFw
         mstot = vartot / dftot
+        # Format all the values as strings, so we can align them nicely
+        # in the output.
+        SSb = _fmt(self.SSb)
+        SSw = _fmt(self.SSw)
+        vartot = _fmt(vartot)
+        SSwidth = max(len(SSb), len(SSw), len(vartot))
+        MSb = _fmt(self.MSb)
+        MSw = _fmt(self.MSw)
+        mstot = _fmt(mstot)
+        MSwidth = max(len(MSb), len(MSw), len(mstot))
+        DFb = str(self.DFb)
+        DFw = str(self.DFw)
+        dftot = str(dftot)
+        DFwidth = max(2, len(DFb), len(DFw), len(dftot))
+        F = _fmt(self.F)
+        Fwidth = len(F)
+        p = format(self.p, '.5g')
+        pwidth = len(p)
+
         s = "\n".join([
                 "ANOVA one-way",
-                "Source                   SS  DF          MS        F       p",
-                f"Between groups {self.SSb:12.5f} {self.DFb:3}  {self.MSb:10.3f} {self.F:8.3f} {self.p:<10.5g}",
-                f"Within groups  {self.SSw:12.5f} {self.DFw:3}  {self.MSw:10.3f}",
-                f"Total          {vartot:12.5f} {dftot:3}  {mstot:10.3f}"])
+                (f"Source         {'SS':>{SSwidth}}  {'DF':>{DFwidth}}  "
+                 f"{'MS':>{MSwidth}}  {'F':>{Fwidth}}  {'p':>{pwidth}}"),
+                (f"Between groups {SSb:{SSwidth}}  {DFb:>{DFwidth}}  "
+                 f"{MSb:{MSwidth}}  {F}  {p}"),
+                (f"Within groups  {SSw:{SSwidth}}  {DFw:>{DFwidth}}  "
+                 f"{MSw:{MSwidth}}"),
+                (f"Total          {vartot:{SSwidth}}  {dftot:>{DFwidth}}  "
+                 f"{mstot:{MSwidth}}")])
         return s
 
 
@@ -38,13 +65,23 @@ def anova_oneway(*args, **kwds):
 
     v = sum(((group - grand_mean)**2).sum() for group in groups)
     vb = sum(len(group)*(group.mean() - grand_mean)**2 for group in groups)
-    vw = v - vb
+
+    # Check for the edge case where the values in each group are constant.
+    # When this happens, vw is 0.  If we don't handle this explicitly, vw
+    # might contain numerical noise, and then F will be nonsense.
+    if all([np.all(group[0] == group) for group in groups]):
+        vw = 0.0
+    else:
+        vw = v - vb
 
     dfb = num_groups - 1
     dfw = n - num_groups
     msb = vb / dfb
     msw = vw / dfw
-    F = msb / msw
+    if msw > 0:
+        F = msb / msw
+    else:
+        F = np.inf
     dof_num = num_groups - 1
     dof_den = n - num_groups
     p = special.fdtrc(dof_num, dof_den, F)
@@ -76,7 +113,8 @@ def anova_oneway_ci_diffs(result: AnovaOnewayResult, alpha):
     for i in range(ngroups - 1):
         for j in range(i + 1, ngroups):
             t = special.stdtrit(result.DFw, 1 - alpha/2)
-            c = np.sqrt(result.MSw * (1/result.group_sizes[i] + 1/result.group_sizes[j]))
+            c = np.sqrt(result.MSw * (1/result.group_sizes[i]
+                                      + 1/result.group_sizes[j]))
             print(i, j, means[i] - means[j], t*c)
 
 
